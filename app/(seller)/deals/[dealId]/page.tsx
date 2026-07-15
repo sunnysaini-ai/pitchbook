@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/db/server";
 import { ReviewQueue } from "@/components/ReviewQueue";
 import { DocumentManager } from "@/components/DocumentManager";
 import { BuyerManager } from "@/components/BuyerManager";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 // "doc_view" -> "Doc view"
 function formatKind(kind: string): string {
@@ -22,6 +22,22 @@ export default async function DealConsole({
 
   const { data: deal } = await supabase.from("deals").select("*").eq("id", dealId).single();
   if (!deal) notFound();
+
+  // The deals row is buyer-readable under RLS (buyers need deal metadata in
+  // their room), so reading it does NOT prove the caller is an admin. Gate the
+  // console on deal_admins membership (self-readable) and bounce buyers to
+  // their room. No data ever leaked — RLS filters every query on this page —
+  // but a buyer must never see the seller chrome (spec §8).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: adminRow } = await supabase
+    .from("deal_admins")
+    .select("deal_id")
+    .eq("deal_id", dealId)
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+  if (!adminRow) redirect(`/room/${dealId}`);
 
   const [{ data: documents }, { data: buyers }, { data: folders }, { data: activityEvents }] =
     await Promise.all([
