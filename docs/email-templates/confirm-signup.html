@@ -1,18 +1,19 @@
 <!-- ============================================================
-  DealDesk — Supabase MAGIC LINK email template (v2, token-hash)
+  DealDesk — Supabase CONFIRM SIGNUP email template (token-hash)
 
   WHERE TO PASTE: Supabase dashboard → Authentication →
-  Email Templates → "Magic Link" → replace the Body (HTML) with
-  everything below this comment block.
-    Subject: Your sign-in link — DealDesk
+  Email Templates → "Confirm signup" → replace the Body (HTML)
+  with everything below this comment block.
+    Subject: Confirm your email — DealDesk
 
-  v2 CHANGE: the button now links to
-    {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink
-  instead of {{ .ConfirmationURL }}. Token-hash links verify on the
-  server and work from ANY browser or device — no more "code
-  challenge does not match" when a user requests on a laptop and
-  clicks on their phone. Requires Site URL to be set to the app's
-  production URL (already done).
+  WHY THIS TEMPLATE MATTERS: this is the email a BRAND-NEW user
+  receives on their first magic-link sign-in (e.g., every invited
+  buyer's first login). If only "Magic Link" is branded, first-time
+  buyers get Supabase's default email — worst possible moment for
+  an unbranded message.
+
+  Uses the token-hash link (works from any browser/device):
+    {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup
 ============================================================ -->
 <!doctype html>
 <html>
@@ -24,14 +25,14 @@
             <div style="font-size:15px;font-weight:700;letter-spacing:0.4px;color:#1f3864;">DealDesk</div>
           </td></tr>
           <tr><td style="padding:20px 36px 28px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1d21;font-size:15px;line-height:1.6;">
-            <p style="margin:0 0 16px 0;">Use the button below to sign in. This link is unique to you and expires shortly.</p>
+            <p style="margin:0 0 16px 0;">Confirm this email address to activate your access. The link is unique to you and expires shortly.</p>
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
               <tr><td style="border-radius:6px;background-color:#1f3864;">
-                <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Sign in</a>
+                <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Confirm and sign in</a>
               </td></tr>
             </table>
-            <p style="margin:0 0 16px 0;">Answers in the data room are drawn only from the deal materials, and your access and activity are private to you.</p>
-            <p style="margin:0;color:#5a6068;">Didn't request this? You can safely ignore this email — the link only works for this address, and it should not be forwarded.</p>
+            <p style="margin:0 0 16px 0;">Access is issued to this address individually and should not be forwarded. Once inside, every answer you receive is drawn only from the deal materials, with citations to the source documents.</p>
+            <p style="margin:0;color:#5a6068;">Didn't expect this? You can safely ignore this email and no account will be activated.</p>
           </td></tr>
         </table>
         <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
