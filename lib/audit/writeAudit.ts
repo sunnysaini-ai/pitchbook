@@ -36,6 +36,8 @@ export const auditActionSchema = z.enum([
   "human.answer_released",
   "human.doc_ai_access_changed",
   "human.buyer_invited",
+  "human.buyer_revoked",
+  "human.buyer_access_changed",
   // Ingest
   "ingest.parse_failed",
   "ingest.document_ready",
