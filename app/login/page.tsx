@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/db/browser";
 
 // Magic-link auth for BOTH sellers and buyers (AGENT_SPEC §1).
@@ -8,6 +8,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Surface auth-callback failures (?error=...) instead of a silent loop.
+  useEffect(() => {
+    const msg = new URLSearchParams(window.location.search).get("error");
+    if (msg) setErr(msg);
+  }, []);
 
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
