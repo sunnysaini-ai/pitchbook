@@ -59,5 +59,14 @@ export function buildUserTurn(
   const excerpts = chunks
     .map((c, i) => `Excerpt [${i + 1}]:\n${formatExcerpt(c)}`)
     .join("\n\n");
-  return `${excerpts}\n\nBuyer question:\n${question}`;
+  // Quoting reminder: check 5 (lib/analyst/guard.ts) verifies each quote as a
+  // single CONTIGUOUS verbatim span and hard-fails to escalation otherwise
+  // (no retry, per spec §6.2). Models naturally quote tables by stitching
+  // cells with "..." — say it here so faithful answers survive the guard.
+  const quotingRules =
+    `Citation quoting rules (mechanical, enforced by a validator):\n` +
+    `- Each citations[].quote must be ONE contiguous span copied character-for-character from a single excerpt (≤240 chars).\n` +
+    `- Never join separate table cells, rows, or sentences with "..." or by re-ordering — use multiple citations instead, one per span.\n` +
+    `- When quoting a markdown table, quote a whole row (or consecutive rows) exactly as written, including all cells in between.`;
+  return `${excerpts}\n\n${quotingRules}\n\nBuyer question:\n${question}`;
 }
