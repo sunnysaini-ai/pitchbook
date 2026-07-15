@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b1220;
+  --color-accent: #1f6feb;
+}
+
+body {
+  background: #f8fafc;
+  color: var(--color-ink);
+}
+
+/* Restrained, document-room primitives (AGENT_SPEC §8: default to restraint).
+   Plain CSS — Tailwind v4 @apply does not compose custom class names. Pages
+   still use Tailwind utility classes directly. */
+.card {
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; background: var(--color-accent); color: #fff; cursor: pointer; }
+.btn-primary:hover { background: #1a5fd0; }
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+.btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; }
+.btn-ghost:hover { background: #f1f5f9; }
+.input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+.input:focus { border-color: var(--color-accent); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  background: #eff6ff;
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.chip:hover { background: #dbeafe; }

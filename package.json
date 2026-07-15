@@ -1,0 +1,39 @@
+{
+  "name": "dealdesk",
+  "version": "0.2.0",
+  "private": true,
+  "description": "DealDesk Chunk 2 — AI-run sell-side data room. Next.js 15 app + Fable-built core (schema, RLS, retrieval, analyst guardrails, audit).",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:rls": "vitest run tests/rls.spec.ts",
+    "test:golden": "vitest run tests/golden.spec.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "2.45.4",
+    "lucide-react": "^0.462.0",
+    "mammoth": "^1.8.0",
+    "next": "^15.5.20",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "server-only": "^0.0.1",
+    "unpdf": "^0.12.1",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.5.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
+  }
+}

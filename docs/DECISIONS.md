@@ -1,0 +1,69 @@
+# DealDesk core — architectural decisions (Chunk 2)
+
+Each entry: decision → one-line rationale.
+
+> Decisions 22–27 (scaffold layer) are appended at the end of this file.
+
+1. **Hand-written `Database` type lives in `lib/db/server.ts`; admin/browser import it with `import type`** — the file boundary forbids a separate `lib/db/types.ts`, and type-only imports are erased at compile so the `next/headers` import never leaks into non-Next contexts.
+
+2. **Retrieval RPCs (`search_chunks_vector`, `search_chunks_fts`) live in `supabase/migrations/0002_rls.sql`** — the §5.1 permission filter is a security control enforced in SQL, so it belongs in the security migration; supabase-js cannot run raw SQL, so the filter ships as `security definer` functions with EXECUTE revoked from `anon`/`authenticated` (service-role worker only).
+
+3. **`0001_init.sql` transcribed verbatim, including `hnsw` on `vector(3072)` — flagged risk** — pgvector's HNSW index caps the `vector` type at 2,000 dimensions, so this index will fail to build on stock pgvector; spec owner should choose `halfvec(3072)` + `halfvec_cosine_ops` or drop to no index / IVFFlat. Transcribed anyway because the spec says verbatim.
+
+4. **Anthropic/OpenAI called via raw `fetch`, with a small private wrapper duplicated in classify/search/answer** — the file boundary allows no shared HTTP module, retry/backoff policy must be ours, and ~25 duplicated lines beat a wrong dependency edge (retrieval importing analyst or vice versa).
+
+5. **Token counting = `ceil(chars/4)`** — no tokenizer is in the pinned stack; the heuristic is conservative and the 1,200-token hard max leaves ample headroom under model limits.
+
+6. **`audit_log` immutability is triple-enforced: no UPDATE/DELETE policy + hard `REVOKE` + a `BEFORE` trigger that raises** — "no policy" alone doesn't bind the service role (it bypasses RLS); the trigger makes history immutable for everyone (INV-4).
+
+7. **A single `ESCALATION_COPY` constant is the only body ever written for ungrounded/failed/escalated answers** — no AI prose can reach a buyer through a failure path, and golden refusal tests can assert equality, not vibes.
+
+8. **The answer worker (`lib/analyst/answer.ts`) runs on the service-role client** — buyers have no INSERT policy on `answers` and drafts must exist before approval; buyer *visibility* remains 100% RLS-governed (INV-5), the worker only writes.
+
+9. **Rerank fails closed** — if haiku returns unparseable scores after one retry, every candidate is left unscored, the post-rerank set is empty, and the groundedness gate refuses (INV-1 beats availability).
+
+10. **Guard owns the retry loop (`guardedGenerate`) and its own audit writes** — §6.2's "retry once, fabricated quote never retries, log ai.quote_fabricated severity high" is policy that must be impossible to skip by calling the checks à la carte.
+
+11. **`writeAudit` validates that AI-generation actions carry prompt+model+chunk_ids+raw_completion and human edits carry the diff, and throws otherwise** — INV-4 is a payload-completeness guarantee, not just a row-exists guarantee; a failed audit write fails the operation it records.
+
+12. **Spreadsheets never go to LlamaParse; they parse locally via `xlsx`, one logical page per sheet with the header row captured separately** — chunk-per-sheet with the header repeated in every chunk (merged-header P&Ls keep column meaning) requires structure LlamaParse's markdown flattens.
+
+13. **Scanned-PDF heuristic (<50 avg chars/page → `likely_scanned`) is applied AFTER whichever parser ran** — a scan fails identically whether LlamaParse or unpdf extracted it, and an empty index entry is worse than a failed status.
+
+14. **`classifyDocument` falls back to `"Other"` on unparseable output** — the category is metadata, never a buyer-visible factual claim, so a wrong-but-safe label beats blocking ingest (the raw completion is still audited).
+
+15. **Model refusals (`grounded=false` or `escalate=true` in valid output) persist as `status='escalated'` with the standard copy, not as the model's own text** — INV-6 says refusal is a correct output, but even refusal prose is unreviewed AI text and stays out of buyer view.
+
+16. **Query embeddings cross the RPC boundary as pgvector literal strings (`[0.1,...]`)** — PostgREST has no native vector parameter type; the literal is cast server-side by the function signature.
+
+17. **Seed litigation memo is chunked ON PURPOSE despite `ai_accessible=false`** — INV-3 must be proven against real rows in the index, not by the memo conveniently having no chunks; `golden.spec.ts#5b` asserts retrieval can never surface them.
+
+18. **Tests construct raw `@supabase/supabase-js` clients instead of importing `lib/db/*`** — `lib/db/admin.ts` imports `server-only` (correct for prod) which throws under vitest; the app scaffold's vitest config should alias `server-only` to a no-op if it ever needs the real modules in tests.
+
+19. **RLS tests assert both directions** — Buyer A sees 0 of Buyer B's rows on every scoped table AND can read their own grants, so a policy that denies everything can't masquerade as isolation.
+
+20. **`answers_buyer_read` grants visibility on `approved`/`released` regardless of mode, plus everything in `fast` mode** — encodes INV-5 exactly: in `strict` mode nothing short of approval is visible, and the check lives in the policy, not the UI.
+
+21. **Ungrounded questions still produce an `answers` row (`status='escalated'`)** — the buyer needs a stable "we're on it" artifact, the deal team needs a queue item, and the audit trail needs a subject id.
+
+---
+
+## Scaffold decisions (Opus — Next.js 15 app layer)
+
+22. **`chunks.embedding` changed `vector(3072)` → `halfvec(3072)`** (resolves the flagged risk in #3). pgvector's HNSW index caps `vector` at 2000 dims; `halfvec` supports up to 4000. Retrieval RPCs cast the query with `::halfvec(3072)`. The one deviation from the "verbatim" schema — made because the verbatim version fails at migration time.
+
+23. **`@supabase/supabase-js` pinned to exactly `2.45.4`** — 2.110+ tightened the `GenericSchema` generic so the hand-written `Database` type degraded every `.from()` to `never`. Pinning restores type inference. Revisit when regenerating types from the live DB via `supabase gen types`.
+
+24. **Buyer questions resolve synchronously** (not the §7 async-job + SSE stream). The trust-critical path — retrieval → groundedness gate → guarded generation → audited answer — is complete; streaming is a UX layer deferred so the gates could be reached first.
+
+25. **Lightweight CSS primitives instead of shadcn/ui for the scaffold** — keeps the build dependency-light and green now. shadcn is the intended path (`npx shadcn@latest init`).
+
+26. **Tailwind v4 component classes written as plain CSS** — v4's `@apply` does not compose custom class names; pages still use Tailwind utilities directly.
+
+27. **Verification in this environment:** `tsc --noEmit` clean, `next build` clean, `vitest` loads both gate suites and skips-with-reason (no silent pass). DB-dependent gates T-04/T-15 must be run by the operator against live Supabase (see RUNBOOK).
+
+28. **Ingestion runs synchronously inside `POST …/documents/[docId]/ingest`** (`lib/ingest/run.ts`) — the orchestrator body is the future Edge Function + pg_cron worker (§4) and moves behind a queue unchanged. Idempotent: it deletes prior chunks before re-inserting, so retries are safe.
+
+29. **Object-level storage authorization is app-layer (service role + deal-admin/RLS check), not storage RLS policies** — AGENT_SPEC's storage section didn't specify object policies. Uploads/downloads use the service role *after* the route authorizes the caller (deal admin for upload; the RLS-scoped `documents` SELECT for buyer view). Adding `storage.objects` RLS keyed on `<dealId>` path is a recommended hardening follow-up.
+
+30. **Citation resolution (T-12) uses a signed-URL iframe with `#page=N` + a quote callout** — resolves to the correct document and jumps to the cited page natively (PDFs), with the verbatim cited passage shown. Pixel-level in-page highlight needs a PDF.js text layer and is a follow-up; the trust requirement (verifiable source at the right page) is met now.
