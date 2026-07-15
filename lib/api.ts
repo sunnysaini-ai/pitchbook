@@ -39,7 +39,15 @@ export function ok(data: unknown) {
 }
 
 export function fail(e: unknown) {
-  const message = e instanceof Error ? e.message : "Unknown error";
+  // PostgrestError and other supabase-js errors are plain objects, not Error
+  // instances — read .message off anything that has one so RLS denials and
+  // constraint violations surface instead of "Unknown error".
+  const message =
+    e instanceof Error
+      ? e.message
+      : typeof (e as { message?: unknown })?.message === "string"
+        ? ((e as { message: string }).message)
+        : "Unknown error";
   const status = (e as any)?.status ?? (message === "UNAUTHENTICATED" ? 401 : 500);
   return NextResponse.json({ error: { code: status, message } }, { status });
 }
