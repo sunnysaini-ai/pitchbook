@@ -49,6 +49,33 @@ export function normalizeWhitespace(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Normalization for the quote-verbatim check (check 5). Beyond whitespace,
+ * collapse any run of pipes-and-whitespace to a single " | " so that quoting
+ * across markdown table ROWS ("62.0% |\n| D. Okafor") compares equal to the
+ * model's natural serialization ("62.0% | D. Okafor"). This does NOT weaken
+ * the anti-fabrication property: cell text must still match exactly, in
+ * order, and contiguously — skipping rows or inventing a value still fails.
+ * (Decision logged in docs/DECISIONS.md.)
+ */
+export function normalizeForQuoteCheck(s: string): string {
+  return normalizeWhitespace(s).replace(/(?:\s*\|\s*)+/g, " | ");
+}
+
+/**
+ * Strip a markdown code fence (``` or ```json ... ```) wrapping the
+ * completion, if present. Models frequently fence JSON output despite the
+ * "JSON only" instruction; the fence carries no content, so removing it is a
+ * safe normalization — every substantive guard check (2–5) still runs on the
+ * parsed object exactly as before. Anything that is not a single fenced
+ * block is returned unchanged and left to JSON.parse to accept or reject.
+ */
+export function stripCodeFence(raw: string): string {
+  const trimmed = raw.trim();
+  const match = /^```[a-zA-Z]*\s*\n?([\s\S]*?)\n?```$/.exec(trimmed);
+  return match?.[1] !== undefined ? match[1].trim() : trimmed;
+}
+
 export function runGuardChecks(
   rawCompletion: string,
   sentChunks: RetrievedChunk[],
@@ -59,7 +86,7 @@ export function runGuardChecks(
   let output: AnalystOutput;
   try {
     const parsed = analystOutputSchema.safeParse(
-      JSON.parse(rawCompletion.trim()),
+      JSON.parse(stripCodeFence(rawCompletion)),
     );
     if (!parsed.success) {
       return {
@@ -132,8 +159,8 @@ export function runGuardChecks(
   for (const citation of output.citations) {
     const chunk = sentById.get(citation.excerpt_id);
     if (!chunk) continue; // already failed check 4
-    const haystack = normalizeWhitespace(chunk.content);
-    const needle = normalizeWhitespace(citation.quote);
+    const haystack = normalizeForQuoteCheck(chunk.content);
+    const needle = normalizeForQuoteCheck(citation.quote);
     if (needle.length === 0 || !haystack.includes(needle)) {
       fabricated = true;
       failures.push({
