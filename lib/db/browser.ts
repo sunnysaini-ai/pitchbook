@@ -11,22 +11,27 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database, TypedSupabaseClient } from "@/lib/db/server";
 
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) {
-    throw new Error(`Missing required environment variable ${name}.`);
-  }
-  return v;
-}
+// CRITICAL: these MUST be static `process.env.NEXT_PUBLIC_*` member
+// expressions. Next.js inlines NEXT_PUBLIC_ vars into the client bundle at
+// build time ONLY when they are accessed statically — a dynamic
+// `process.env[name]` lookup compiles to a runtime read, and the browser has
+// no runtime env, so it is undefined forever regardless of hosting config.
+// (This exact bug shipped once; see docs/DECISIONS.md #31.)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 let cached: TypedSupabaseClient | null = null;
 
 /** Singleton per browser tab — @supabase/ssr manages the cookie session. */
 export function createSupabaseBrowserClient(): TypedSupabaseClient {
   if (cached) return cached;
-  cached = createBrowserClient<Database>(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-  );
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Supabase browser config missing: NEXT_PUBLIC_SUPABASE_URL / " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY were not present at BUILD time. " +
+        "Set them in the host's env settings, then rebuild/redeploy.",
+    );
+  }
+  cached = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
   return cached;
 }
