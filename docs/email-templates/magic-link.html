@@ -1,0 +1,46 @@
+<!-- ============================================================
+  DealDesk — Supabase MAGIC LINK email template (Phase 3)
+
+  WHERE TO PASTE: Supabase dashboard → Authentication →
+  Email Templates → "Magic Link" → replace the Body (HTML) with
+  everything below this comment block, and set:
+    Subject: Your sign-in link — DealDesk
+
+  Template variables ({{ .ConfirmationURL }}) are filled by
+  Supabase at send time. Do not rename them.
+
+  Recommended while you're in that screen:
+  - Sender name/address are inherited from your SMTP settings
+    (already pointed at Resend).
+  - Also update "Confirm signup" with the same body if signups
+    are enabled; sellers get the same restrained look.
+============================================================ -->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background-color:#f4f5f7;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#ffffff;border:1px solid #e3e5e8;border-radius:8px;">
+          <tr><td style="padding:28px 36px 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            <div style="font-size:15px;font-weight:700;letter-spacing:0.4px;color:#1f3864;">DealDesk</div>
+          </td></tr>
+          <tr><td style="padding:20px 36px 28px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1d21;font-size:15px;line-height:1.6;">
+            <p style="margin:0 0 16px 0;">Use the button below to sign in. This link is unique to you and expires shortly.</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+              <tr><td style="border-radius:6px;background-color:#1f3864;">
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Sign in</a>
+              </td></tr>
+            </table>
+            <p style="margin:0 0 16px 0;">Answers in the data room are drawn only from the deal materials, and your access and activity are private to you.</p>
+            <p style="margin:0;color:#5a6068;">Didn't request this? You can safely ignore this email — the link only works from this inbox, and it should not be forwarded.</p>
+          </td></tr>
+        </table>
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+          <tr><td style="padding:16px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#8a9099;font-size:12px;line-height:1.5;">
+            This message relates to a confidential process. If you received it in error, please delete it and notify the sender.
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>
