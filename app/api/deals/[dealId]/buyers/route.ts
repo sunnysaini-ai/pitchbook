@@ -83,8 +83,12 @@ export async function POST(
         );
       }
     } else {
-      emailError =
-        "email env not configured (NEXT_PUBLIC_APP_URL / RESEND_API_KEY / EMAIL_FROM)";
+      const missing = [
+        !appUrl && "NEXT_PUBLIC_APP_URL",
+        !process.env.RESEND_API_KEY && "RESEND_API_KEY",
+        !process.env.EMAIL_FROM && "EMAIL_FROM",
+      ].filter(Boolean);
+      emailError = `email env not configured — missing: ${missing.join(", ")}`;
     }
 
     // INV-4: an invite is a human release of access — part of the process record.
